@@ -6,6 +6,7 @@ import {
   type LeadCreateOut,
   type LeadDetailOut,
   type LeadSummaryOut,
+  type ProposalOut,
   type SearchResponse,
 } from "./types";
 
@@ -65,4 +66,12 @@ export function deleteLead(id: string): Promise<void> {
 export function searchLead(leadId: string, q: string, nResults = 5): Promise<SearchResponse> {
   const params = new URLSearchParams({ q, n_results: String(nResults) });
   return request<SearchResponse>(`/leads/${leadId}/search?${params.toString()}`);
+}
+
+export function getProposal(leadId: string): Promise<ProposalOut> {
+  return request<ProposalOut>(`/leads/${leadId}/proposal`);
+}
+
+export function proposalExportUrl(leadId: string): string {
+  return `${API_BASE}/leads/${leadId}/proposal/export`;
 }

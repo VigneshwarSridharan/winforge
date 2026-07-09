@@ -45,3 +45,25 @@ class SearchHit(BaseModel):
 class SearchResponse(BaseModel):
     query: str
     results: list[SearchHit]
+
+
+class ProposalSectionOut(BaseModel):
+    id: str
+    order_index: int
+    section_title: str
+    status: str
+    draft_text: str | None
+    exemplar_lead_id: str | None
+    exemplar_lead_name: str | None
+    exemplar_distance: float | None
+    error_message: str | None
+
+
+class ProposalOut(BaseModel):
+    id: str
+    lead_id: str
+    status: str
+    error_message: str | None
+    created_at: str
+    updated_at: str
+    sections: list[ProposalSectionOut]

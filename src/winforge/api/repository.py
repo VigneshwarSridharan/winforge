@@ -111,3 +111,108 @@ def list_documents(
     return db.execute(
         "SELECT * FROM documents WHERE lead_id = ? ORDER BY created_at", (lead_id,)
     ).fetchall()
+
+
+def create_proposal(
+    db: sqlite3.Connection, proposal_id: str, lead_id: str, rfp_document_id: str
+) -> None:
+    now = _now()
+    db.execute(
+        "INSERT INTO proposals (id, lead_id, rfp_document_id, status, created_at, updated_at) "
+        "VALUES (?, ?, ?, 'pending', ?, ?)",
+        (proposal_id, lead_id, rfp_document_id, now, now),
+    )
+    db.commit()
+
+
+def get_proposal_by_lead(db: sqlite3.Connection, lead_id: str) -> sqlite3.Row | None:
+    return db.execute(
+        "SELECT * FROM proposals WHERE lead_id = ?", (lead_id,)
+    ).fetchone()
+
+
+def mark_proposal_generating(db: sqlite3.Connection, proposal_id: str) -> None:
+    db.execute(
+        "UPDATE proposals SET status = 'generating', updated_at = ? WHERE id = ?",
+        (_now(), proposal_id),
+    )
+    db.commit()
+
+
+def mark_proposal_completed(db: sqlite3.Connection, proposal_id: str) -> None:
+    db.execute(
+        "UPDATE proposals SET status = 'completed', updated_at = ? WHERE id = ?",
+        (_now(), proposal_id),
+    )
+    db.commit()
+
+
+def mark_proposal_failed(db: sqlite3.Connection, proposal_id: str, error_message: str) -> None:
+    db.execute(
+        "UPDATE proposals SET status = 'failed', error_message = ?, updated_at = ? WHERE id = ?",
+        (error_message[:500], _now(), proposal_id),
+    )
+    db.commit()
+
+
+def create_proposal_section(
+    db: sqlite3.Connection,
+    section_id: str,
+    proposal_id: str,
+    order_index: int,
+    section_title: str,
+    rfp_section_text: str,
+) -> None:
+    now = _now()
+    db.execute(
+        "INSERT INTO proposal_sections "
+        "(id, proposal_id, order_index, section_title, rfp_section_text, status, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, 'pending', ?, ?)",
+        (section_id, proposal_id, order_index, section_title, rfp_section_text, now, now),
+    )
+    db.commit()
+
+
+def mark_section_drafting(db: sqlite3.Connection, section_id: str) -> None:
+    db.execute(
+        "UPDATE proposal_sections SET status = 'drafting', updated_at = ? WHERE id = ?",
+        (_now(), section_id),
+    )
+    db.commit()
+
+
+def mark_section_completed(
+    db: sqlite3.Connection,
+    section_id: str,
+    draft_text: str,
+    exemplar_lead_id: str | None,
+    exemplar_text: str | None,
+    exemplar_distance: float | None,
+) -> None:
+    db.execute(
+        "UPDATE proposal_sections SET status = 'completed', draft_text = ?, "
+        "exemplar_lead_id = ?, exemplar_text = ?, exemplar_distance = ?, updated_at = ? "
+        "WHERE id = ?",
+        (draft_text, exemplar_lead_id, exemplar_text, exemplar_distance, _now(), section_id),
+    )
+    db.commit()
+
+
+def mark_section_failed(db: sqlite3.Connection, section_id: str, error_message: str) -> None:
+    db.execute(
+        "UPDATE proposal_sections SET status = 'failed', error_message = ?, updated_at = ? "
+        "WHERE id = ?",
+        (error_message[:500], _now(), section_id),
+    )
+    db.commit()
+
+
+def list_proposal_sections(db: sqlite3.Connection, proposal_id: str) -> list[sqlite3.Row]:
+    return db.execute(
+        "SELECT ps.*, l.name AS exemplar_lead_name "
+        "FROM proposal_sections ps "
+        "LEFT JOIN leads l ON l.id = ps.exemplar_lead_id "
+        "WHERE ps.proposal_id = ? "
+        "ORDER BY ps.order_index",
+        (proposal_id,),
+    ).fetchall()

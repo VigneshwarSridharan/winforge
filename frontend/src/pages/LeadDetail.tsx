@@ -5,6 +5,7 @@ import { qk } from "../api/queryKeys";
 import { ApiError, type DocType, type DocumentOut, type LeadDetailOut } from "../api/types";
 import { ErrorBanner } from "../components/ErrorBanner";
 import { FileUploadForm } from "../components/FileUploadForm";
+import { ProposalPanel } from "../components/ProposalPanel";
 import { SearchPanel } from "../components/SearchPanel";
 import { StatusBadge } from "../components/StatusBadge";
 
@@ -139,6 +140,11 @@ export function LeadDetail() {
       <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
         <h2 className="text-sm font-semibold text-gray-900">Search</h2>
         <SearchPanel leadId={leadId} enabled={hasIndexedDocument} />
+      </div>
+
+      <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
+        <h2 className="text-sm font-semibold text-gray-900">Draft Proposal</h2>
+        <ProposalPanel leadId={leadId} enabled={hasIndexedDocument} />
       </div>
     </div>
   );

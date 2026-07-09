@@ -48,6 +48,31 @@ export interface SearchResponse {
   results: SearchHit[];
 }
 
+export type ProposalStatus = "pending" | "generating" | "completed" | "failed";
+export type ProposalSectionStatus = "pending" | "drafting" | "completed" | "failed";
+
+export interface ProposalSectionOut {
+  id: string;
+  order_index: number;
+  section_title: string;
+  status: ProposalSectionStatus;
+  draft_text: string | null;
+  exemplar_lead_id: string | null;
+  exemplar_lead_name: string | null;
+  exemplar_distance: number | null;
+  error_message: string | null;
+}
+
+export interface ProposalOut {
+  id: string;
+  lead_id: string;
+  status: ProposalStatus;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  sections: ProposalSectionOut[];
+}
+
 export class ApiError extends Error {
   status: number;
 

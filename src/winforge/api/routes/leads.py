@@ -1,17 +1,21 @@
 import shutil
 import sqlite3
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi.responses import Response
 
 from winforge.api import repository
 from winforge.api.db import get_db
 from winforge.api.ingest import ingest_document
 from winforge.api.paths import chroma_dir, lead_dir, raw_path
+from winforge.api.proposal_generation import run_proposal_generation
 from winforge.api.schemas import (
     DocumentOut,
     LeadCreateOut,
     LeadDetailOut,
     LeadSummaryOut,
+    ProposalOut,
+    ProposalSectionOut,
     SearchHit,
     SearchResponse,
 )
@@ -54,6 +58,7 @@ def _save_upload(file: UploadFile, dest_path) -> None:
 
 @router.post("", status_code=201, response_model=LeadCreateOut)
 def create_lead(
+    background_tasks: BackgroundTasks,
     name: str = Form(...),
     file: UploadFile = File(...),
     db: sqlite3.Connection = Depends(get_db),
@@ -73,6 +78,8 @@ def create_lead(
 
     lead = repository.get_lead(db, lead_id)
     document = repository.get_document(db, document_id)
+    if document["status"] == "indexed":
+        background_tasks.add_task(run_proposal_generation, lead_id, document_id)
     return LeadCreateOut(id=lead["id"], name=lead["name"], status=lead["status"], rfp=_document_out(document))
 
 
@@ -182,3 +189,61 @@ def search_lead(
         )
     ]
     return SearchResponse(query=q, results=hits)
+
+
+def _proposal_out(proposal: sqlite3.Row, sections: list[sqlite3.Row]) -> ProposalOut:
+    return ProposalOut(
+        id=proposal["id"],
+        lead_id=proposal["lead_id"],
+        status=proposal["status"],
+        error_message=proposal["error_message"],
+        created_at=proposal["created_at"],
+        updated_at=proposal["updated_at"],
+        sections=[
+            ProposalSectionOut(
+                id=s["id"],
+                order_index=s["order_index"],
+                section_title=s["section_title"],
+                status=s["status"],
+                draft_text=s["draft_text"],
+                exemplar_lead_id=s["exemplar_lead_id"],
+                exemplar_lead_name=s["exemplar_lead_name"],
+                exemplar_distance=s["exemplar_distance"],
+                error_message=s["error_message"],
+            )
+            for s in sections
+        ],
+    )
+
+
+@router.get("/{lead_id}/proposal", response_model=ProposalOut)
+def get_proposal(lead_id: str, db: sqlite3.Connection = Depends(get_db)) -> ProposalOut:
+    _get_lead_or_404(db, lead_id)
+    proposal = repository.get_proposal_by_lead(db, lead_id)
+    if proposal is None:
+        raise HTTPException(404, "Proposal has not been generated for this lead yet")
+    return _proposal_out(proposal, repository.list_proposal_sections(db, proposal["id"]))
+
+
+@router.get("/{lead_id}/proposal/export")
+def export_proposal(lead_id: str, db: sqlite3.Connection = Depends(get_db)) -> Response:
+    lead = _get_lead_or_404(db, lead_id)
+    proposal = repository.get_proposal_by_lead(db, lead_id)
+    if proposal is None:
+        raise HTTPException(404, "Proposal has not been generated for this lead yet")
+    sections = repository.list_proposal_sections(db, proposal["id"])
+
+    lines = [f"# Proposal Draft — {lead['name']}", ""]
+    for s in sections:
+        lines.append(f"## {s['section_title']}")
+        lines.append("")
+        lines.append(s["draft_text"] if s["draft_text"] else "*This section failed to generate.*")
+        lines.append("")
+    md = "\n".join(lines)
+
+    safe_name = "".join(c if c.isalnum() else "_" for c in lead["name"])
+    return Response(
+        content=md,
+        media_type="text/markdown",
+        headers={"Content-Disposition": f'attachment; filename="{safe_name}_proposal_draft.md"'},
+    )
