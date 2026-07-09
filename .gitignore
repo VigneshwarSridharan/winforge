@@ -1,0 +1,21 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Secrets
+.env
+
+# Local-only, machine-specific paths
+chroma-config.yaml
+
+src/winforge/samples
+
+# Chroma vector DB data
+/chroma/
