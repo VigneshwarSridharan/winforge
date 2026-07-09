@@ -22,3 +22,6 @@ src/winforge/samples
 
 # Lead API data (sqlite db, uploaded PDFs, per-lead chroma collections)
 /data/
+
+# Frontend (frontend/dist and .env already caught by dist/ and .env above)
+frontend/node_modules/
