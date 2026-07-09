@@ -12,6 +12,24 @@ def pdf_to_chunks(pdf_path: Path) -> list[dict]:
     return markdown_to_chunks(pdf_path, md)
 
 
+def index_document(
+    pdf_path: Path,
+    chroma_dir: Path,
+    collection_name: str,
+    chunks_json_path: Path | None = None,
+) -> list[dict]:
+    """Ingest a single PDF into a specific (per-lead) chroma collection."""
+    chunks = pdf_to_chunks(pdf_path)
+    if chunks_json_path is not None:
+        chunks_json_path.parent.mkdir(parents=True, exist_ok=True)
+        chunks_json_path.write_text(json.dumps(chunks, indent=2))
+
+    embeddings = embed_chunks(chunks)
+    collection = get_collection(chroma_dir, collection_name)
+    upsert_chunks(collection, chunks, embeddings)
+    return chunks
+
+
 def index_dir(
     directory: Path | str,
     output_dir: Path | str | None = None,

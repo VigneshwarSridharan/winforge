@@ -19,3 +19,6 @@ src/winforge/samples
 
 # Chroma vector DB data
 /chroma/
+
+# Lead API data (sqlite db, uploaded PDFs, per-lead chroma collections)
+/data/
