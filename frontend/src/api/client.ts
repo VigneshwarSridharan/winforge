@@ -7,6 +7,7 @@ import {
   type LeadDetailOut,
   type LeadSummaryOut,
   type ProposalOut,
+  type ProposalValidationOut,
   type SearchResponse,
 } from "./types";
 
@@ -74,4 +75,11 @@ export function getProposal(leadId: string): Promise<ProposalOut> {
 
 export function proposalExportUrl(leadId: string): string {
   return `${API_BASE}/leads/${leadId}/proposal/export`;
+}
+
+export function getProposalValidation(
+  leadId: string,
+  documentId: string,
+): Promise<ProposalValidationOut> {
+  return request<ProposalValidationOut>(`/leads/${leadId}/proposal-validation/${documentId}`);
 }

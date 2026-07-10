@@ -73,6 +73,53 @@ export interface ProposalOut {
   sections: ProposalSectionOut[];
 }
 
+export type ValidationStatus = "pending" | "validating" | "completed" | "failed";
+export type ValidationItemStatus = "pending" | "evaluating" | "completed" | "failed";
+export type ValidationItemKind = "requirement" | "extra_section";
+export type CoverageStatus = "fulfilled" | "partial" | "missing";
+export type Recommendation = "bid" | "no_bid" | "conditional";
+
+export interface ValidationItemOut {
+  id: string;
+  order_index: number;
+  kind: ValidationItemKind;
+  title: string;
+  source_text: string;
+  coverage_status: CoverageStatus | null;
+  score: number | null;
+  matched_text: string | null;
+  realism_notes: string | null;
+  suggestion: string | null;
+  exemplar_lead_id: string | null;
+  exemplar_lead_name: string | null;
+  exemplar_distance: number | null;
+  status: ValidationItemStatus;
+  error_message: string | null;
+}
+
+export interface SuggestedSectionOut {
+  id: string;
+  order_index: number;
+  title: string;
+  rationale: string | null;
+}
+
+export interface ProposalValidationOut {
+  id: string;
+  lead_id: string;
+  proposal_document_id: string;
+  rfp_document_id: string;
+  status: ValidationStatus;
+  overall_score: number | null;
+  recommendation: Recommendation | null;
+  summary: string | null;
+  error_message: string | null;
+  created_at: string;
+  updated_at: string;
+  items: ValidationItemOut[];
+  suggested_sections: SuggestedSectionOut[];
+}
+
 export class ApiError extends Error {
   status: number;
 

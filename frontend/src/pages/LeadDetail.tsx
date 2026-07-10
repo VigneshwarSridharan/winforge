@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { addDocument, deleteLead, getLead } from "../api/client";
 import { qk } from "../api/queryKeys";
@@ -8,11 +9,19 @@ import { FileUploadForm } from "../components/FileUploadForm";
 import { ProposalPanel } from "../components/ProposalPanel";
 import { SearchPanel } from "../components/SearchPanel";
 import { StatusBadge } from "../components/StatusBadge";
+import { ValidationPanel } from "../components/ValidationPanel";
 
 const DOC_SECTIONS: { type: DocType; title: string }[] = [
   { type: "rfp", title: "RFP" },
   { type: "proposal", title: "Proposals" },
   { type: "additional", title: "Additional documents" },
+];
+
+type ProposalTab = "draft" | "report";
+
+const PROPOSAL_TABS: { key: ProposalTab; label: string }[] = [
+  { key: "draft", label: "Draft Proposal" },
+  { key: "report", label: "Proposal Report" },
 ];
 
 function hasInFlightDocuments(lead: LeadDetailOut | undefined): boolean {
@@ -21,17 +30,19 @@ function hasInFlightDocuments(lead: LeadDetailOut | undefined): boolean {
 
 function DocumentRow({ doc }: { doc: DocumentOut }) {
   return (
-    <li className="flex items-start justify-between gap-4 py-2">
-      <div>
-        <p className="text-sm font-medium text-gray-900">{doc.original_filename}</p>
-        {doc.status === "failed" && doc.error_message && (
-          <p className="mt-0.5 text-xs text-red-600">{doc.error_message}</p>
-        )}
-        {doc.status === "indexed" && doc.chunk_count !== null && (
-          <p className="mt-0.5 text-xs text-gray-500">{doc.chunk_count} chunks</p>
-        )}
+    <li className="py-3">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">{doc.original_filename}</p>
+          {doc.status === "failed" && doc.error_message && (
+            <p className="mt-0.5 text-xs text-red-600 dark:text-red-400">{doc.error_message}</p>
+          )}
+          {doc.status === "indexed" && doc.chunk_count !== null && (
+            <p className="mt-0.5 text-xs text-zinc-500">{doc.chunk_count} chunks</p>
+          )}
+        </div>
+        <StatusBadge status={doc.status} />
       </div>
-      <StatusBadge status={doc.status} />
     </li>
   );
 }
@@ -52,7 +63,7 @@ export function LeadDetail() {
     mutationFn: () => deleteLead(leadId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: qk.leads });
-      navigate("/");
+      navigate("/leads");
     },
   });
 
@@ -68,84 +79,152 @@ export function LeadDetail() {
     queryClient.invalidateQueries({ queryKey: qk.lead(leadId) });
   }
 
-  if (isLoading) return <p className="text-sm text-gray-500">Loading lead…</p>;
+  if (isLoading) {
+    return (
+      <div className="p-8 max-w-7xl mx-auto">
+        <p className="text-sm text-zinc-500">Loading lead…</p>
+      </div>
+    );
+  }
   if (error) {
     return (
-      <ErrorBanner
-        message={error instanceof ApiError ? error.message : "Failed to load lead."}
-        onRetry={() => refetch()}
-      />
+      <div className="p-8 max-w-7xl mx-auto">
+        <ErrorBanner
+          message={error instanceof ApiError ? error.message : "Failed to load lead."}
+          onRetry={() => refetch()}
+        />
+      </div>
     );
   }
   if (!lead) return null;
 
   const hasIndexedDocument = lead.documents.some((d) => d.status === "indexed");
+  const indexedProposalDocs = lead.documents.filter((d) => d.doc_type === "proposal" && d.status === "indexed");
 
   return (
-    <div className="space-y-6">
-      <div>
-        <Link to="/" className="text-sm text-gray-500 hover:underline">
-          ← Back to leads
-        </Link>
-      </div>
-
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-gray-900">{lead.name}</h1>
-          <p className="text-sm text-gray-500">
-            Status: {lead.status} · Created {new Date(lead.created_at).toLocaleString()}
-          </p>
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="mb-8">
+        <div className="text-sm text-zinc-500 mb-2">
+          <Link to="/leads" className="hover:text-zinc-700 dark:hover:text-zinc-300 transition-colors">
+            Leads
+          </Link>{" "}
+          / <span className="text-zinc-700 dark:text-zinc-300">{lead.name}</span>
         </div>
-        <button
-          onClick={handleDelete}
-          disabled={deleteMutation.isPending}
-          className="rounded border border-red-300 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
-        >
-          Delete lead
-        </button>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">{lead.name}</h2>
+            <p className="text-zinc-500 mt-1 text-sm">
+              Status: {lead.status} · Created {new Date(lead.created_at).toLocaleString()}
+            </p>
+          </div>
+          <button
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+            className="px-4 py-2 rounded-lg border border-red-300 text-red-600 hover:bg-red-50 transition-colors text-sm font-medium disabled:opacity-50 dark:border-red-500/30 dark:text-red-400 dark:hover:bg-red-500/10"
+          >
+            Delete lead
+          </button>
+        </div>
       </div>
 
-      <div className="space-y-4 rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Documents</h2>
-        {DOC_SECTIONS.map(({ type, title }) => {
-          const docs = lead.documents.filter((d) => d.doc_type === type);
-          return (
-            <div key={type}>
-              <h3 className="mb-1 text-xs font-medium uppercase text-gray-500">{title}</h3>
-              {docs.length === 0 ? (
-                <p className="text-sm text-gray-400">None yet</p>
-              ) : (
-                <ul className="divide-y divide-gray-100">
-                  {docs.map((doc) => (
-                    <DocumentRow key={doc.id} doc={doc} />
-                  ))}
-                </ul>
-              )}
+      <div className="grid grid-cols-3 gap-8">
+        <div className="col-span-1 space-y-6">
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 dark:bg-zinc-900/50 dark:border-zinc-800">
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Documents</h3>
+            <div className="space-y-5">
+              {DOC_SECTIONS.map(({ type, title }) => {
+                const docs = lead.documents.filter((d) => d.doc_type === type);
+                return (
+                  <div key={type}>
+                    <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500">{title}</h4>
+                    {docs.length === 0 ? (
+                      <p className="text-sm text-zinc-400 dark:text-zinc-600">None yet</p>
+                    ) : (
+                      <ul className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                        {docs.map((doc) => (
+                          <DocumentRow key={doc.id} doc={doc} />
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+
+              <div className="border-t border-zinc-100 dark:border-zinc-800 pt-4">
+                <FileUploadForm
+                  submitLabel="Add document"
+                  docTypeOptions={[
+                    { value: "proposal", label: "Proposal" },
+                    { value: "additional", label: "Additional" },
+                  ]}
+                  onUpload={handleAddDocument}
+                />
+              </div>
             </div>
-          );
-        })}
+          </div>
 
-        <div className="border-t border-gray-100 pt-3">
-          <FileUploadForm
-            submitLabel="Add document"
-            docTypeOptions={[
-              { value: "proposal", label: "Proposal" },
-              { value: "additional", label: "Additional" },
-            ]}
-            onUpload={handleAddDocument}
-          />
+          <div className="bg-white border border-zinc-200 rounded-2xl p-6 dark:bg-zinc-900/50 dark:border-zinc-800">
+            <h3 className="font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Search</h3>
+            <SearchPanel leadId={leadId} enabled={hasIndexedDocument} />
+          </div>
+        </div>
+
+        <div className="col-span-2">
+          <ProposalTabs leadId={leadId} hasIndexedDocument={hasIndexedDocument} proposalDocs={indexedProposalDocs} />
         </div>
       </div>
+    </div>
+  );
+}
 
-      <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Search</h2>
-        <SearchPanel leadId={leadId} enabled={hasIndexedDocument} />
+function ProposalTabs({
+  leadId,
+  hasIndexedDocument,
+  proposalDocs,
+}: {
+  leadId: string;
+  hasIndexedDocument: boolean;
+  proposalDocs: DocumentOut[];
+}) {
+  const [tab, setTab] = useState<ProposalTab>("draft");
+
+  return (
+    <div className="bg-white border border-zinc-200 rounded-2xl p-6 dark:bg-zinc-900/50 dark:border-zinc-800">
+      <div className="flex gap-1 mb-4 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+        {PROPOSAL_TABS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setTab(key)}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              tab === key
+                ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-lg shadow-orange-600/20"
+                : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <div className="space-y-2 rounded-lg border border-gray-200 bg-white p-4">
-        <h2 className="text-sm font-semibold text-gray-900">Draft Proposal</h2>
-        <ProposalPanel leadId={leadId} enabled={hasIndexedDocument} />
-      </div>
+      {tab === "draft" && <ProposalPanel leadId={leadId} enabled={hasIndexedDocument} />}
+
+      {tab === "report" &&
+        (proposalDocs.length === 0 ? (
+          <p className="text-sm text-zinc-500">No indexed proposal documents yet.</p>
+        ) : (
+          <div className="space-y-6">
+            {proposalDocs.map((doc) => (
+              <div key={doc.id}>
+                {proposalDocs.length > 1 && (
+                  <h4 className="mb-1 text-xs font-semibold uppercase tracking-wider text-zinc-500 truncate">
+                    {doc.original_filename}
+                  </h4>
+                )}
+                <ValidationPanel leadId={leadId} documentId={doc.id} />
+              </div>
+            ))}
+          </div>
+        ))}
     </div>
   );
 }

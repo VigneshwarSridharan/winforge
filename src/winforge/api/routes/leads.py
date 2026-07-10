@@ -9,6 +9,7 @@ from winforge.api.db import get_db
 from winforge.api.ingest import ingest_document
 from winforge.api.paths import chroma_dir, lead_dir, raw_path
 from winforge.api.proposal_generation import run_proposal_generation
+from winforge.api.proposal_validation import run_proposal_validation
 from winforge.api.schemas import (
     DocumentOut,
     LeadCreateOut,
@@ -16,8 +17,11 @@ from winforge.api.schemas import (
     LeadSummaryOut,
     ProposalOut,
     ProposalSectionOut,
+    ProposalValidationOut,
     SearchHit,
     SearchResponse,
+    SuggestedSectionOut,
+    ValidationItemOut,
 )
 from winforge.embedding import embed_chunks
 from winforge.vectorstore import delete_collection, get_collection
@@ -114,6 +118,7 @@ def get_lead_detail(lead_id: str, db: sqlite3.Connection = Depends(get_db)) -> L
 @router.post("/{lead_id}/documents", status_code=201, response_model=DocumentOut)
 def add_document(
     lead_id: str,
+    background_tasks: BackgroundTasks,
     doc_type: str = Form(...),
     file: UploadFile = File(...),
     db: sqlite3.Connection = Depends(get_db),
@@ -135,7 +140,17 @@ def add_document(
         raise HTTPException(409, "Lead already has an RFP") from None
 
     ingest_document(db, lead_id, document_id, stored_path)
-    return _document_out(repository.get_document(db, document_id))
+    document = repository.get_document(db, document_id)
+
+    if doc_type == "proposal" and document["status"] == "indexed":
+        rfp_docs = repository.list_documents(db, lead_id, "rfp")
+        rfp_document = rfp_docs[0] if rfp_docs else None
+        if rfp_document is not None and rfp_document["status"] == "indexed":
+            background_tasks.add_task(
+                run_proposal_validation, lead_id, document_id, rfp_document["id"]
+            )
+
+    return _document_out(document)
 
 
 @router.get("/{lead_id}/documents", response_model=list[DocumentOut])
@@ -246,4 +261,65 @@ def export_proposal(lead_id: str, db: sqlite3.Connection = Depends(get_db)) -> R
         content=md,
         media_type="text/markdown",
         headers={"Content-Disposition": f'attachment; filename="{safe_name}_proposal_draft.md"'},
+    )
+
+
+def _proposal_validation_out(
+    validation: sqlite3.Row, items: list[sqlite3.Row], suggestions: list[sqlite3.Row]
+) -> ProposalValidationOut:
+    return ProposalValidationOut(
+        id=validation["id"],
+        lead_id=validation["lead_id"],
+        proposal_document_id=validation["proposal_document_id"],
+        rfp_document_id=validation["rfp_document_id"],
+        status=validation["status"],
+        overall_score=validation["overall_score"],
+        recommendation=validation["recommendation"],
+        summary=validation["summary"],
+        error_message=validation["error_message"],
+        created_at=validation["created_at"],
+        updated_at=validation["updated_at"],
+        items=[
+            ValidationItemOut(
+                id=i["id"],
+                order_index=i["order_index"],
+                kind=i["kind"],
+                title=i["title"],
+                source_text=i["source_text"],
+                coverage_status=i["coverage_status"],
+                score=i["score"],
+                matched_text=i["matched_text"],
+                realism_notes=i["realism_notes"],
+                suggestion=i["suggestion"],
+                exemplar_lead_id=i["exemplar_lead_id"],
+                exemplar_lead_name=i["exemplar_lead_name"],
+                exemplar_distance=i["exemplar_distance"],
+                status=i["status"],
+                error_message=i["error_message"],
+            )
+            for i in items
+        ],
+        suggested_sections=[
+            SuggestedSectionOut(
+                id=s["id"], order_index=s["order_index"], title=s["title"], rationale=s["rationale"]
+            )
+            for s in suggestions
+        ],
+    )
+
+
+@router.get(
+    "/{lead_id}/proposal-validation/{document_id}", response_model=ProposalValidationOut
+)
+def get_proposal_validation(
+    lead_id: str, document_id: str, db: sqlite3.Connection = Depends(get_db)
+) -> ProposalValidationOut:
+    _get_lead_or_404(db, lead_id)
+    validation = repository.get_validation_by_document(db, document_id)
+    if validation is None or validation["lead_id"] != lead_id:
+        raise HTTPException(404, "No validation found for this document")
+    return _proposal_validation_out(
+        validation,
+        repository.list_validation_items(db, validation["id"]),
+        repository.list_validation_suggested_sections(db, validation["id"]),
     )

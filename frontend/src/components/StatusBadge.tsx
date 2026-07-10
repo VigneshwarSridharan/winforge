@@ -1,10 +1,11 @@
 import type { DocumentStatus } from "../api/types";
+import { DANGER_BADGE, INFO_BADGE, NEUTRAL_BADGE, SUCCESS_BADGE } from "../theme/badges";
 
 const STYLES: Record<DocumentStatus, string> = {
-  pending: "bg-gray-100 text-gray-700",
-  processing: "bg-blue-100 text-blue-700",
-  indexed: "bg-green-100 text-green-700",
-  failed: "bg-red-100 text-red-700",
+  pending: NEUTRAL_BADGE,
+  processing: INFO_BADGE,
+  indexed: SUCCESS_BADGE,
+  failed: DANGER_BADGE,
 };
 
 export function StatusBadge({ status }: { status: DocumentStatus }) {
