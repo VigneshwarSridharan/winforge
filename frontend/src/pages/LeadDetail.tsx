@@ -8,6 +8,7 @@ import { FileUploadForm } from "../components/FileUploadForm";
 import { ProposalPanel } from "../components/ProposalPanel";
 import { SearchPanel } from "../components/SearchPanel";
 import { StatusBadge } from "../components/StatusBadge";
+import { ValidationPanel } from "../components/ValidationPanel";
 
 const DOC_SECTIONS: { type: DocType; title: string }[] = [
   { type: "rfp", title: "RFP" },
@@ -19,19 +20,24 @@ function hasInFlightDocuments(lead: LeadDetailOut | undefined): boolean {
   return !!lead?.documents.some((d) => d.status === "pending" || d.status === "processing");
 }
 
-function DocumentRow({ doc }: { doc: DocumentOut }) {
+function DocumentRow({ leadId, doc }: { leadId: string; doc: DocumentOut }) {
   return (
-    <li className="flex items-start justify-between gap-4 py-2">
-      <div>
-        <p className="text-sm font-medium text-gray-900">{doc.original_filename}</p>
-        {doc.status === "failed" && doc.error_message && (
-          <p className="mt-0.5 text-xs text-red-600">{doc.error_message}</p>
-        )}
-        {doc.status === "indexed" && doc.chunk_count !== null && (
-          <p className="mt-0.5 text-xs text-gray-500">{doc.chunk_count} chunks</p>
-        )}
+    <li className="py-2">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium text-gray-900">{doc.original_filename}</p>
+          {doc.status === "failed" && doc.error_message && (
+            <p className="mt-0.5 text-xs text-red-600">{doc.error_message}</p>
+          )}
+          {doc.status === "indexed" && doc.chunk_count !== null && (
+            <p className="mt-0.5 text-xs text-gray-500">{doc.chunk_count} chunks</p>
+          )}
+        </div>
+        <StatusBadge status={doc.status} />
       </div>
-      <StatusBadge status={doc.status} />
+      {doc.doc_type === "proposal" && doc.status === "indexed" && (
+        <ValidationPanel leadId={leadId} documentId={doc.id} />
+      )}
     </li>
   );
 }
@@ -117,7 +123,7 @@ export function LeadDetail() {
               ) : (
                 <ul className="divide-y divide-gray-100">
                   {docs.map((doc) => (
-                    <DocumentRow key={doc.id} doc={doc} />
+                    <DocumentRow key={doc.id} leadId={leadId} doc={doc} />
                   ))}
                 </ul>
               )}

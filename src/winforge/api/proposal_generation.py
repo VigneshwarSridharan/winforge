@@ -8,7 +8,7 @@ from winforge.embedding import embed_chunks
 from winforge.proposal import draft_section, find_exemplar, load_rfp_sections
 
 
-def _other_lead_contexts(db: sqlite3.Connection, exclude_lead_id: str) -> list[dict]:
+def other_lead_contexts(db: sqlite3.Connection, exclude_lead_id: str) -> list[dict]:
     contexts = []
     for lead in repository.list_leads(db):
         if lead["id"] == exclude_lead_id:
@@ -61,7 +61,7 @@ def generate_proposal(db: sqlite3.Connection, lead_id: str, rfp_document_id: str
 
     repository.mark_proposal_generating(db, proposal_id)
     lead = repository.get_lead(db, lead_id)
-    other_leads = _other_lead_contexts(db, lead_id)
+    other_leads = other_lead_contexts(db, lead_id)
 
     section_ids = [repository.new_id() for _ in sections]
     for order_index, (section_id, section) in enumerate(zip(section_ids, sections)):

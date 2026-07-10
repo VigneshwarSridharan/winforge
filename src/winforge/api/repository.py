@@ -216,3 +216,167 @@ def list_proposal_sections(db: sqlite3.Connection, proposal_id: str) -> list[sql
         "ORDER BY ps.order_index",
         (proposal_id,),
     ).fetchall()
+
+
+def create_proposal_validation(
+    db: sqlite3.Connection,
+    validation_id: str,
+    lead_id: str,
+    proposal_document_id: str,
+    rfp_document_id: str,
+) -> None:
+    now = _now()
+    db.execute(
+        "INSERT INTO proposal_validations "
+        "(id, lead_id, proposal_document_id, rfp_document_id, status, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, 'pending', ?, ?)",
+        (validation_id, lead_id, proposal_document_id, rfp_document_id, now, now),
+    )
+    db.commit()
+
+
+def get_validation_by_document(
+    db: sqlite3.Connection, proposal_document_id: str
+) -> sqlite3.Row | None:
+    return db.execute(
+        "SELECT * FROM proposal_validations WHERE proposal_document_id = ?",
+        (proposal_document_id,),
+    ).fetchone()
+
+
+def mark_validation_validating(db: sqlite3.Connection, validation_id: str) -> None:
+    db.execute(
+        "UPDATE proposal_validations SET status = 'validating', updated_at = ? WHERE id = ?",
+        (_now(), validation_id),
+    )
+    db.commit()
+
+
+def mark_validation_completed(
+    db: sqlite3.Connection,
+    validation_id: str,
+    overall_score: float,
+    recommendation: str,
+    summary: str,
+) -> None:
+    db.execute(
+        "UPDATE proposal_validations SET status = 'completed', overall_score = ?, "
+        "recommendation = ?, summary = ?, updated_at = ? WHERE id = ?",
+        (overall_score, recommendation, summary, _now(), validation_id),
+    )
+    db.commit()
+
+
+def mark_validation_failed(db: sqlite3.Connection, validation_id: str, error_message: str) -> None:
+    db.execute(
+        "UPDATE proposal_validations SET status = 'failed', error_message = ?, updated_at = ? "
+        "WHERE id = ?",
+        (error_message[:500], _now(), validation_id),
+    )
+    db.commit()
+
+
+def create_validation_item(
+    db: sqlite3.Connection,
+    item_id: str,
+    validation_id: str,
+    order_index: int,
+    kind: str,
+    title: str,
+    source_text: str,
+) -> None:
+    now = _now()
+    db.execute(
+        "INSERT INTO validation_items "
+        "(id, validation_id, order_index, kind, title, source_text, status, created_at, updated_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, ?)",
+        (item_id, validation_id, order_index, kind, title, source_text, now, now),
+    )
+    db.commit()
+
+
+def mark_item_evaluating(db: sqlite3.Connection, item_id: str) -> None:
+    db.execute(
+        "UPDATE validation_items SET status = 'evaluating', updated_at = ? WHERE id = ?",
+        (_now(), item_id),
+    )
+    db.commit()
+
+
+def mark_item_completed(
+    db: sqlite3.Connection,
+    item_id: str,
+    *,
+    coverage_status: str | None = None,
+    score: float | None = None,
+    matched_text: str | None = None,
+    realism_notes: str | None = None,
+    suggestion: str | None = None,
+    exemplar_lead_id: str | None = None,
+    exemplar_text: str | None = None,
+    exemplar_distance: float | None = None,
+) -> None:
+    db.execute(
+        "UPDATE validation_items SET status = 'completed', coverage_status = ?, score = ?, "
+        "matched_text = ?, realism_notes = ?, suggestion = ?, exemplar_lead_id = ?, "
+        "exemplar_text = ?, exemplar_distance = ?, updated_at = ? WHERE id = ?",
+        (
+            coverage_status,
+            score,
+            matched_text,
+            realism_notes,
+            suggestion,
+            exemplar_lead_id,
+            exemplar_text,
+            exemplar_distance,
+            _now(),
+            item_id,
+        ),
+    )
+    db.commit()
+
+
+def mark_item_failed(db: sqlite3.Connection, item_id: str, error_message: str) -> None:
+    db.execute(
+        "UPDATE validation_items SET status = 'failed', error_message = ?, updated_at = ? "
+        "WHERE id = ?",
+        (error_message[:500], _now(), item_id),
+    )
+    db.commit()
+
+
+def list_validation_items(db: sqlite3.Connection, validation_id: str) -> list[sqlite3.Row]:
+    return db.execute(
+        "SELECT vi.*, l.name AS exemplar_lead_name "
+        "FROM validation_items vi "
+        "LEFT JOIN leads l ON l.id = vi.exemplar_lead_id "
+        "WHERE vi.validation_id = ? "
+        "ORDER BY vi.order_index",
+        (validation_id,),
+    ).fetchall()
+
+
+def create_validation_suggested_section(
+    db: sqlite3.Connection,
+    suggestion_id: str,
+    validation_id: str,
+    order_index: int,
+    title: str,
+    rationale: str | None,
+) -> None:
+    db.execute(
+        "INSERT INTO validation_suggested_sections "
+        "(id, validation_id, order_index, title, rationale, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?)",
+        (suggestion_id, validation_id, order_index, title, rationale, _now()),
+    )
+    db.commit()
+
+
+def list_validation_suggested_sections(
+    db: sqlite3.Connection, validation_id: str
+) -> list[sqlite3.Row]:
+    return db.execute(
+        "SELECT * FROM validation_suggested_sections WHERE validation_id = ? ORDER BY order_index",
+        (validation_id,),
+    ).fetchall()

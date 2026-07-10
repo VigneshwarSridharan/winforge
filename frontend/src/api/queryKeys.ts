@@ -6,4 +6,6 @@ export const qk = {
   documents: (id: string, docType?: DocType) => ["leads", id, "documents", docType] as const,
   search: (id: string, q: string) => ["leads", id, "search", q] as const,
   proposal: (id: string) => ["leads", id, "proposal"] as const,
+  proposalValidation: (leadId: string, documentId: string) =>
+    ["leads", leadId, "proposal-validation", documentId] as const,
 };
