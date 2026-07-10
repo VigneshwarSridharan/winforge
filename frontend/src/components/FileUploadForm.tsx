@@ -47,7 +47,7 @@ export function FileUploadForm({ submitLabel, busyLabel, docTypeOptions, onUploa
           value={docType}
           onChange={(e) => setDocType(e.target.value as DocType)}
           disabled={busy}
-          className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-200"
+          className="rounded-lg border border-zinc-300 bg-white px-2 py-1.5 text-sm text-zinc-800 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-200"
         >
           {docTypeOptions.map((opt) => (
             <option key={opt.value} value={opt.value}>
@@ -66,7 +66,7 @@ export function FileUploadForm({ submitLabel, busyLabel, docTypeOptions, onUploa
       <button
         type="submit"
         disabled={busy}
-        className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-50 shadow-lg shadow-indigo-600/20"
+        className="rounded-lg bg-gradient-to-r from-red-600 to-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:brightness-110 transition-all disabled:opacity-50 shadow-lg shadow-orange-600/20"
       >
         {busy ? (busyLabel ?? "Uploading and indexing…") : submitLabel}
       </button>

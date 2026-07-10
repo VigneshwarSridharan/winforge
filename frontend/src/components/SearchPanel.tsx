@@ -36,12 +36,12 @@ export function SearchPanel({ leadId, enabled }: { leadId: string; enabled: bool
           onChange={(e) => setQuery(e.target.value)}
           disabled={!enabled}
           placeholder={enabled ? "Search this lead's documents…" : "Index a document to enable search"}
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100 dark:placeholder-zinc-600"
+          className="flex-1 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-colors disabled:opacity-50 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-100 dark:placeholder-zinc-600"
         />
         <button
           type="submit"
           disabled={!enabled || isFetching}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors disabled:opacity-50 shadow-lg shadow-indigo-600/20"
+          className="rounded-lg bg-gradient-to-r from-red-600 to-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:brightness-110 transition-all disabled:opacity-50 shadow-lg shadow-orange-600/20"
         >
           {isFetching ? "Searching…" : "Search"}
         </button>

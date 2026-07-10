@@ -40,8 +40,13 @@ export function Layout() {
       <aside className="w-64 shrink-0 border-r border-zinc-200 bg-white/50 backdrop-blur-xl flex flex-col dark:border-zinc-800/80 dark:bg-zinc-900/50">
         <div className="p-6">
           <Link to="/" className="text-xl font-bold tracking-tight flex items-center gap-2">
-            <span className="bg-indigo-500 w-4 h-4 rounded-sm rotate-45" />
-            Winforge
+            <span className="bg-gradient-to-br from-red-600 via-orange-500 to-amber-400 w-4 h-4 rounded-sm rotate-45" />
+            <span>
+              Win
+              <span className="bg-gradient-to-r from-red-600 via-orange-500 to-amber-400 bg-clip-text text-transparent">
+                forge
+              </span>
+            </span>
           </Link>
         </div>
         <nav className="flex-1 px-4 space-y-1">
@@ -65,7 +70,12 @@ export function Layout() {
         </nav>
         <div className="p-4 border-t border-zinc-200 dark:border-zinc-800/80 space-y-3">
           <ThemeToggle />
-          <p className="text-xs text-zinc-500">Winforge</p>
+          <p className="text-xs text-zinc-500">
+            Win
+            <span className="bg-gradient-to-r from-red-600 via-orange-500 to-amber-400 bg-clip-text text-transparent">
+              forge
+            </span>
+          </p>
         </div>
       </aside>
 

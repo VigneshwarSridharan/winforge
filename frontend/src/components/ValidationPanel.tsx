@@ -117,7 +117,7 @@ export function ValidationPanel({ leadId, documentId }: { leadId: string; docume
                   <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{item.realism_notes}</p>
                 )}
                 {item.suggestion && (
-                  <p className="mt-1 text-xs text-indigo-600 dark:text-indigo-400">Suggestion: {item.suggestion}</p>
+                  <p className="mt-1 text-xs text-orange-600 dark:text-orange-400">Suggestion: {item.suggestion}</p>
                 )}
                 {item.exemplar_lead_name && (
                   <p className="mt-1 text-xs text-zinc-500">

@@ -60,7 +60,7 @@ export function LeadsList() {
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white transition-colors text-sm font-semibold flex items-center gap-2 shadow-lg shadow-indigo-600/20"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-red-600 to-orange-500 hover:brightness-110 text-white transition-all text-sm font-semibold flex items-center gap-2 shadow-lg shadow-orange-600/20"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -99,7 +99,7 @@ export function LeadsList() {
                 className="grid grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-zinc-100 dark:hover:bg-zinc-900/60 transition-colors rounded-lg group"
               >
                 <div className="col-span-4 font-medium text-zinc-900 dark:text-zinc-100">
-                  <Link to={`/leads/${lead.id}`} className="hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+                  <Link to={`/leads/${lead.id}`} className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
                     {lead.name}
                   </Link>
                 </div>

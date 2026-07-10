@@ -68,7 +68,7 @@ export function ProposalPanel({ leadId, enabled }: { leadId: string; enabled: bo
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Status: {data.status}</p>
         <a
           href={proposalExportUrl(leadId)}
-          className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-indigo-500 transition-colors shadow-lg shadow-indigo-600/20"
+          className="rounded-lg bg-gradient-to-r from-red-600 to-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:brightness-110 transition-all shadow-lg shadow-orange-600/20"
         >
           Download draft (.md)
         </a>

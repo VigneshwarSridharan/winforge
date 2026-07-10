@@ -52,7 +52,7 @@ export function ThemeToggle() {
           aria-pressed={mode === opt.mode}
           className={`flex flex-1 items-center justify-center rounded-md p-1.5 transition-colors ${
             mode === opt.mode
-              ? "bg-white text-indigo-600 shadow-sm dark:bg-zinc-700 dark:text-indigo-400"
+              ? "bg-white text-orange-600 shadow-sm dark:bg-zinc-700 dark:text-orange-400"
               : "text-zinc-500 hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
           }`}
         >

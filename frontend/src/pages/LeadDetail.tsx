@@ -197,7 +197,7 @@ function ProposalTabs({
             onClick={() => setTab(key)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
               tab === key
-                ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/20"
+                ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-lg shadow-orange-600/20"
                 : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:text-zinc-100 dark:hover:bg-zinc-800"
             }`}
           >

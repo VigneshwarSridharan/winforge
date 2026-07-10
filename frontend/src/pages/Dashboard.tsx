@@ -9,7 +9,7 @@ import { ErrorBanner } from "../components/ErrorBanner";
 function StatCard({ label, value, icon }: { label: string; value: number; icon: ReactNode }) {
   return (
     <div className="bg-white border border-zinc-200 rounded-2xl p-5 flex items-center gap-4 dark:bg-zinc-900/50 dark:border-zinc-800">
-      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 shrink-0 dark:bg-indigo-500/10 dark:text-indigo-400">
+      <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-orange-50 text-orange-600 shrink-0 dark:bg-orange-500/10 dark:text-orange-400">
         {icon}
       </div>
       <div>
@@ -114,7 +114,7 @@ export function Dashboard() {
               <h3 className="font-semibold text-zinc-900 dark:text-zinc-100">Recent leads</h3>
               <Link
                 to="/leads"
-                className="text-sm text-indigo-600 hover:text-indigo-500 font-medium dark:text-indigo-400"
+                className="text-sm text-orange-600 hover:text-orange-500 font-medium dark:text-orange-400"
               >
                 View all
               </Link>
@@ -128,7 +128,7 @@ export function Dashboard() {
                   <li key={lead.id} className="flex items-center justify-between py-3">
                     <Link
                       to={`/leads/${lead.id}`}
-                      className="text-sm font-medium text-zinc-900 hover:text-indigo-600 transition-colors dark:text-zinc-100 dark:hover:text-indigo-400"
+                      className="text-sm font-medium text-zinc-900 hover:text-orange-600 transition-colors dark:text-zinc-100 dark:hover:text-orange-400"
                     >
                       {lead.name}
                     </Link>
